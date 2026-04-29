@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Tracker</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #ffffff;
+      --color-bg-secondary: #f5f5f4;
+      --color-bg-success: #eaf3de;
+      --color-bg-info: #e6f1fb;
+      --color-bg-warning: #faeeda;
+      --color-bg-danger: #fcebeb;
+      --color-text: #1a1a1a;
+      --color-text-secondary: #6b6b68;
+      --color-text-tertiary: #9b9b98;
+      --color-text-success: #27500a;
+      --color-text-info: #0c447c;
+      --color-text-warning: #633806;
+      --color-text-danger: #791f1f;
+      --color-border: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.22);
+      --color-border-success: rgba(63,130,20,0.35);
+      --color-border-info: rgba(24,95,165,0.3);
+      --color-border-warning: rgba(133,79,11,0.35);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      color: var(--color-text);
+      background: var(--color-bg);
+      padding: 12px;
+      line-height: 1.5;
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid var(--color-border);
+    }
+    .app-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .top-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── Buttons ── */
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--color-border-secondary);
+      background: transparent;
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    button:hover { background: var(--color-bg-secondary); }
+    button.primary {
+      background: #185fa5;
+      color: #fff;
+      border-color: #185fa5;
+    }
+    button.primary:hover { background: #0c447c; }
+
+    /* ── Settings bar ── */
+    .settings-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    .settings-bar input[type=number] {
+      width: 50px;
+      text-align: center;
+      padding: 3px 6px;
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    /* ── Project cards (main list) ── */
+    .project-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .project-card {
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      cursor: pointer;
+      transition: border-color 0.1s;
+    }
+    .project-card:hover { border-color: var(--color-border-secondary); }
+    .project-card.selected { border-color: #185fa5; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px 8px;
+      gap: 8px;
+    }
+    .card-name {
+      font-weight: 600;
+      font-size: 13px;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-name-placeholder { color: var(--color-text-tertiary); font-weight: 400; }
+    .pip-row { display: flex; align-items: center; gap: 3px; }
+    .pip {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--color-border-secondary);
+      display: inline-block;
+    }
+    .pip.done { background: #3b6d11; }
+    .pip-label { font-size: 11px; color: var(--color-text-tertiary); margin-left: 2px; }
+    .del-btn {
+      background: none; border: none; padding: 2px 5px;
+      color: var(--color-text-tertiary); font-size: 15px; cursor: pointer; flex-shrink: 0;
+    }
+    .del-btn:hover { color: var(--color-text-danger); background: var(--color-bg-danger); border-radius: 4px; }
+
+    .card-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      padding: 0 12px 10px;
+      font-size: 11px;
+    }
+    .date-item { display: flex; flex-direction: column; gap: 1px; }
+    .date-label { color: var(--color-text-tertiary); font-size: 10px; }
+    .date-val { color: var(--color-text); font-weight: 500; }
+    .date-val.auto { color: var(--color-text-info); }
+    .date-val.empty { color: var(--color-text-tertiary); font-weight: 400; }
+
+    /* ── Detail panel ── */
+    .detail-panel {
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .detail-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 0.5px solid var(--color-border);
+    }
+    .detail-title { font-size: 14px; font-weight: 600; }
+    .close-btn { background: none; border: none; font-size: 17px; cursor: pointer; color: var(--color-text-secondary); padding: 0 4px; }
+
+    /* ── Form fields ── */
+    .field-group { margin-bottom: 10px; }
+    .field-label {
+      display: block; font-size: 11px;
+      color: var(--color-text-secondary); margin-bottom: 3px;
+    }
+    .field-auto-note { font-size: 10px; color: var(--color-text-info); margin-top: 2px; }
+    input[type=text], input[type=date], input[type=email], input[type=url], input[type=number], select {
+      width: 100%;
+      padding: 5px 8px;
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: inherit;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+    input:focus, select:focus { outline: none; border-color: #185fa5; }
+    .auto-value {
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-info);
+      color: var(--color-text-info);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--color-text-secondary);
+      margin: 14px 0 8px;
+      padding-top: 12px;
+      border-top: 0.5px solid var(--color-border);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Progress bar ── */
+    .progress-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .progress-bg { flex: 1; height: 5px; background: var(--color-border); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #3b6d11; border-radius: 99px; transition: width 0.2s; }
+    .progress-lbl { font-size: 11px; color: var(--color-text-secondary); white-space: nowrap; }
+
+    /* ── Checklist ── */
+    .checklist { display: flex; flex-direction: column; gap: 6px; }
+    .check-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--color-border);
+      background: var(--color-bg-secondary);
+    }
+    .check-item.checked {
+      border-color: var(--color-border-success);
+      background: var(--color-bg-success);
+    }
+    .check-item input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; accent-color: #3b6d11; }
+    .check-item-label { flex: 1; font-size: 12px; }
+    .check-item.checked .check-item-label { color: var(--color-text-success); }
+    .check-item select { width: auto; font-size: 11px; padding: 2px 5px; max-width: 110px; }
+
+    /* ── Avatar ── */
+    .avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 50%;
+      font-size: 9px; font-weight: 600; flex-shrink: 0;
+    }
+
+    /* ── Notify banner ── */
+    .notify-banner {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-success);
+      border: 0.5px solid var(--color-border-success);
+      margin-bottom: 10px;
+    }
+    .notify-title { font-size: 12px; font-weight: 600; color: var(--color-text-success); margin-bottom: 3px; }
+    .notify-sub { font-size: 11px; color: var(--color-text-success); opacity: 0.8; margin-bottom: 8px; }
+    .attach-reminder {
+      display: flex; align-items: flex-start; gap: 6px;
+      font-size: 11px; color: var(--color-text-warning);
+      background: var(--color-bg-warning);
+      border: 0.5px solid var(--color-border-warning);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px; margin-bottom: 8px;
+    }
+    .notify-links { display: flex; flex-direction: column; gap: 5px; }
+    .notify-link {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 8px; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--color-border-success);
+      color: var(--color-text-success);
+      background: var(--color-bg);
+      text-decoration: none; font-size: 11px;
+    }
+    .notify-link:hover { background: var(--color-bg-success); }
+    .notify-tasks { margin-left: auto; font-size: 10px; opacity: 0.7; }
+
+    /* ── Works order ── */
+    .works-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .works-row input { flex: 1; }
+    .works-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 8px; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--color-border-info);
+      color: var(--color-text-info); text-decoration: none; font-size: 11px; white-space: nowrap;
+    }
+    .works-link:hover { background: var(--color-bg-info); }
+
+    /* ── Team panel ── */
+    .team-panel {
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .team-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .team-panel-title { font-size: 13px; font-weight: 600; }
+    .team-member-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 8px; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--color-border);
+      background: var(--color-bg-secondary);
+      margin-bottom: 6px;
+    }
+    .team-member-row input { flex: 1; min-width: 0; font-size: 11px; }
+    .remove-btn { background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); font-size: 14px; padding: 0 3px; flex-shrink: 0; }
+    .remove-btn:hover { color: var(--color-text-danger); }
+    .add-member-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .add-member-row input { flex: 1; min-width: 80px; font-size: 12px; }
+
+    /* ── Status bar ── */
+    .status-bar {
+      font-size: 11px; color: var(--color-text-secondary);
+      padding: 6px 8px; border-radius: var(--radius-sm);
+      background: var(--color-bg-secondary);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #3b6d11; flex-shrink: 0; }
+    .status-dot.warn { background: #854f0b; }
+
+    .empty-state {
+      text-align: center; padding: 24px 12px;
+      color: var(--color-text-tertiary); font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <span class="app-title">Project tracker</span>
+  <div class="top-actions">
+    <button onclick="toggleTeamPanel()">Team roster</button>
+    <button class="primary" onclick="addProject()">+ Add project</button>
+  </div>
+</div>
+
+<div id="statusBar" class="status-bar" style="display:none;">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusMsg"></span>
+</div>
+
+<div id="teamPanelWrap" style="display:none;">
+  <div class="team-panel">
+    <div class="team-panel-header">
+      <span class="team-panel-title">Team roster</span>
+      <button class="close-btn" onclick="closeTeamPanel()">&#x2715;</button>
+    </div>
+    <div id="teamRoster"></div>
+    <div class="add-member-row">
+      <input type="text" id="newMemberName" placeholder="Name…">
+      <input type="email" id="newMemberEmail" placeholder="Email…" onkeydown="if(event.key==='Enter')addMember()">
+      <button onclick="addMember()">+ Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="settings-bar">
+  <span>Default lead time:</span>
+  <input type="number" id="defaultLead" value="20" min="1" max="99" onchange="applyDefault(this.value)">
+  <span>weeks</span>
+</div>
+
+<div class="project-list" id="projectList"></div>
+
+<div id="detailWrap" style="display:none;">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <span class="detail-title" id="detailName">—</span>
+      <button class="close-btn" onclick="closeDetail()">&#x2715;</button>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Customer name</label>
+      <input type="text" id="d_name" placeholder="Customer name" oninput="updateSelected('name',this.value)">
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Order date</label>
+        <input type="date" id="d_orderDate" onchange="updateSelected('orderDate',this.value)">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Lead time (weeks)</label>
+        <input type="number" id="d_leadWeeks" min="1" max="99" onchange="updateSelected('leadWeeks',parseInt(this.value)||20)">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Design start</label>
+        <div class="auto-value" id="d_designStart">—</div>
+        <div class="field-auto-note">Order date + 4 weeks</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Glass order date</label>
+        <input type="date" id="d_glassOrder" onchange="updateSelected('glassOrder',this.value)">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Workshop drawing</label>
+        <div class="auto-value" id="d_workshopDrawing">—</div>
+        <div class="field-auto-note">Install date − 8 weeks</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Install date</label>
+        <div class="auto-value" id="d_installDate">—</div>
+        <div class="field-auto-note" id="d_installNote">Order date + 20 weeks</div>
+      </div>
+    </div>
+
+    <div class="section-label">Required items</div>
+
+    <div class="progress-row">
+      <div class="progress-bg"><div class="progress-fill" id="d_progressFill" style="width:0%"></div></div>
+      <span class="progress-lbl" id="d_progressLbl">0 / 4</span>
+    </div>
+
+    <div id="d_notifyBanner" style="display:none;"></div>
+
+    <div class="checklist" id="d_checklist"></div>
+
+    <div class="section-label">Works order document</div>
+    <div class="works-row">
+      <input type="url" id="d_worksUrl" placeholder="Paste OneDrive link here…" oninput="updateWorksUrl()">
+      <a id="d_worksLink" class="works-link" href="#" target="_blank" style="display:none;">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9 2h5v5M14 2L8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Open
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────
+   DATA & STATE
+───────────────────────────────────────────── */
+const CHECK_ITEMS = ['Design approved','Glass ordered','Hardware ordered','Paint ordered'];
+const TRIGGERED_BY_DESIGN = ['Glass ordered','Hardware ordered','Paint ordered'];
+const MEMBER_COLORS = [
+  {bg:'#E6F1FB',text:'#0C447C'},{bg:'#E1F5EE',text:'#085041'},
+  {bg:'#EEEDFE',text:'#3C3489'},{bg:'#FAECE7',text:'#712B13'},
+  {bg:'#FBEAF0',text:'#72243E'},{bg:'#FAEEDA',text:'#633806'}
+];
+
+let defaultLead = 20;
+let selectedId = null;
+let team = [];
+let projects = [];
+let officeReady = false;
+
+/* ─────────────────────────────────────────────
+   OFFICE INIT
+───────────────────────────────────────────── */
+Office.onReady(info => {
+  if (info.host === Office.HostType.Excel) {
+    officeReady = true;
+    loadFromSheet().then(() => render());
+  } else {
+    // Fallback for browser testing without Excel
+    officeReady = false;
+    projects = [{id:1,name:'Sample Customer',orderDate:'2025-01-06',glassOrder:'',leadWeeks:20,worksOrderUrl:'',checks:{},assignees:{}}];
+    render();
+  }
+});
+
+/* ─────────────────────────────────────────────
+   EXCEL DATA LAYER — read/write hidden sheet
+───────────────────────────────────────────── */
+const DATA_SHEET = 'ProjectTrackerData';
+
+async function loadFromSheet() {
+  try {
+    await Excel.run(async ctx => {
+      let sheet;
+      try {
+        sheet = ctx.workbook.worksheets.getItem(DATA_SHEET);
+        sheet.load('name');
+        await ctx.sync();
+      } catch(e) {
+        sheet = ctx.workbook.worksheets.add(DATA_SHEET);
+        sheet.visibility = Excel.SheetVisibility.veryHidden;
+        await ctx.sync();
+        return;
+      }
+      sheet.visibility = Excel.SheetVisibility.veryHidden;
+      const range = sheet.getUsedRange();
+      range.load('values');
+      await ctx.sync();
+      if (!range || !range.values || range.values.length < 1) return;
+      const rows = range.values;
+      if (rows[0][0] === 'CONFIG') {
+        try { const cfg = JSON.parse(rows[0][1]); defaultLead = cfg.defaultLead || 20; document.getElementById('defaultLead').value = defaultLead; } catch(e){}
+      }
+      if (rows[0][0] === 'TEAM' || rows.some(r=>r[0]==='TEAM')) {
+        const teamRow = rows.find(r=>r[0]==='TEAM');
+        if (teamRow) { try { team = JSON.parse(teamRow[1]) || []; } catch(e){} }
+      }
+      if (rows[0][0] === 'PROJECTS' || rows.some(r=>r[0]==='PROJECTS')) {
+        const pRow = rows.find(r=>r[0]==='PROJECTS');
+        if (pRow) { try { projects = JSON.parse(pRow[1]) || []; } catch(e){} }
+      }
+    });
+  } catch(e) { showStatus('Could not load data from sheet: ' + e.message, true); }
+}
+
+async function saveToSheet() {
+  if (!officeReady) return;
+  try {
+    await Excel.run(async ctx => {
+      let sheet;
+      try {
+        sheet = ctx.workbook.worksheets.getItem(DATA_SHEET);
+        sheet.load('name');
+        await ctx.sync();
+      } catch(e) {
+        sheet = ctx.workbook.worksheets.add(DATA_SHEET);
+        await ctx.sync();
+      }
+      sheet.visibility = Excel.SheetVisibility.veryHidden;
+      sheet.getUsedRange().clear();
+      sheet.getRange('A1').values = [['CONFIG', JSON.stringify({defaultLead})]];
+      sheet.getRange('A2').values = [['TEAM', JSON.stringify(team)]];
+      sheet.getRange('A3').values = [['PROJECTS', JSON.stringify(projects)]];
+      await ctx.sync();
+    });
+    showStatus('Saved to workbook', false);
+  } catch(e) { showStatus('Save failed: ' + e.message, true); }
+}
+
+function showStatus(msg, isWarn) {
+  const bar = document.getElementById('statusBar');
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusMsg');
+  dot.className = 'status-dot' + (isWarn ? ' warn' : '');
+  txt.textContent = msg;
+  bar.style.display = 'flex';
+  clearTimeout(window._statusTimer);
+  window._statusTimer = setTimeout(() => { bar.style.display = 'none'; }, 3000);
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function initials(name){ return name.trim().split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
+function memberColor(id){ const idx=team.findIndex(m=>m.id===id); return MEMBER_COLORS[Math.max(0,idx)%MEMBER_COLORS.length]; }
+
+function addWeeks(dateStr, weeks) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + weeks * 7);
+  return d.toISOString().slice(0,10);
+}
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function calcDates(p) {
+  const installDate = p.orderDate ? addWeeks(p.orderDate, p.leadWeeks||20) : '';
+  const designStart = p.orderDate ? addWeeks(p.orderDate, 4) : '';
+  const workshopDrawing = installDate ? addWeeks(installDate, -8) : '';
+  return { installDate, designStart, workshopDrawing };
+}
+function applyDefault(val){ defaultLead = Math.max(1, parseInt(val)||20); saveToSheet(); }
+
+/* ─────────────────────────────────────────────
+   PROJECT CRUD
+───────────────────────────────────────────── */
+function addProject() {
+  const p = {id: Date.now(), name:'', orderDate:'', glassOrder:'', leadWeeks: defaultLead, worksOrderUrl:'', checks:{}, assignees:{}};
+  projects.push(p);
+  render();
+  showDetail(p.id);
+  saveToSheet();
+}
+
+function deleteProject(id, e) {
+  e.stopPropagation();
+  if (!confirm('Remove this project?')) return;
+  projects = projects.filter(x => x.id !== id);
+  if (selectedId === id) { selectedId = null; document.getElementById('detailWrap').style.display='none'; }
+  render();
+  saveToSheet();
+}
+
+function updateSelected(field, value) {
+  const p = projects.find(x => x.id === selectedId);
+  if (!p) return;
+  if (field === 'leadWeeks') value = Math.max(1, parseInt(value)||1);
+  p[field] = value;
+  refreshDetailCalcs(p);
+  renderProjectCard(p);
+  saveToSheet();
+}
+
+function toggleCheck(id, key) {
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+  p.checks[key] = !p.checks[key];
+  if (selectedId === id) showDetail(id);
+  renderProjectCard(p);
+  saveToSheet();
+}
+
+function setAssignee(id, key, memberId) {
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+  p.assignees[key] = memberId || null;
+  if (selectedId === id) showDetail(id);
+  saveToSheet();
+}
+
+/* ─────────────────────────────────────────────
+   TEAM CRUD
+───────────────────────────────────────────── */
+function addMember() {
+  const nameEl = document.getElementById('newMemberName');
+  const emailEl = document.getElementById('newMemberEmail');
+  const name = nameEl.value.trim();
+  const email = emailEl.value.trim();
+  if (!name) return;
+  team.push({id: 'm'+Date.now(), name, email});
+  nameEl.value = ''; emailEl.value = '';
+  renderTeamPanel();
+  if (selectedId) showDetail(selectedId);
+  saveToSheet();
+}
+function removeMember(id) {
+  team = team.filter(m => m.id !== id);
+  projects.forEach(p => { Object.keys(p.assignees).forEach(k => { if (p.assignees[k]===id) p.assignees[k]=null; }); });
+  renderTeamPanel();
+  if (selectedId) showDetail(selectedId);
+  saveToSheet();
+}
+function updateMemberField(id, field, value) {
+  const m = team.find(x => x.id===id);
+  if (m) { m[field] = value; saveToSheet(); }
+}
+function toggleTeamPanel() {
+  const w = document.getElementById('teamPanelWrap');
+  w.style.display = w.style.display === 'none' ? 'block' : 'none';
+  renderTeamPanel();
+}
+function closeTeamPanel() { document.getElementById('teamPanelWrap').style.display = 'none'; }
+
+function renderTeamPanel() {
+  const roster = document.getElementById('teamRoster');
+  roster.innerHTML = '';
+  if (!team.length) {
+    roster.innerHTML = '<p style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:8px;">No team members yet.</p>';
+    return;
+  }
+  team.forEach(m => {
+    const c = memberColor(m.id);
+    const row = document.createElement('div'); row.className = 'team-member-row';
+    row.innerHTML = `<span class="avatar" style="background:${c.bg};color:${c.text};">${initials(m.name)}</span>
+      <input type="text" value="${m.name}" placeholder="Name" onchange="updateMemberField('${m.id}','name',this.value)">
+      <input type="email" value="${m.email||''}" placeholder="Email" onchange="updateMemberField('${m.id}','email',this.value)">
+      <button class="remove-btn" onclick="removeMember('${m.id}')">&#x2715;</button>`;
+    roster.appendChild(row);
+  });
+}
+
+/* ─────────────────────────────────────────────
+   RENDER — project list
+───────────────────────────────────────────── */
+function render() {
+  const list = document.getElementById('projectList');
+  list.innerHTML = '';
+  if (!projects.length) {
+    list.innerHTML = '<div class="empty-state">No projects yet.<br>Click "+ Add project" to get started.</div>';
+    return;
+  }
+  projects.forEach(p => {
+    const card = buildProjectCard(p);
+    list.appendChild(card);
+  });
+}
+
+function buildProjectCard(p) {
+  const { installDate, designStart, workshopDrawing } = calcDates(p);
+  const done = CHECK_ITEMS.filter(k => p.checks[k]).length;
+  const pips = CHECK_ITEMS.map(k => `<span class="pip${p.checks[k]?' done':''}"></span>`).join('');
+  const nameHtml = p.name
+    ? `<span class="card-name">${p.name}</span>`
+    : `<span class="card-name card-name-placeholder">Unnamed project</span>`;
+
+  const div = document.createElement('div');
+  div.className = 'project-card' + (selectedId===p.id?' selected':'');
+  div.id = 'card_' + p.id;
+  div.innerHTML = `
+    <div class="card-header">
+      ${nameHtml}
+      <div class="pip-row">${pips}<span class="pip-label">${done}/4</span></div>
+      <button class="del-btn" onclick="deleteProject(${p.id},event)" title="Remove">&#x2715;</button>
+    </div>
+    <div class="card-dates">
+      <div class="date-item"><span class="date-label">Order date</span><span class="date-val ${p.orderDate?'':'empty'}">${p.orderDate?fmt(p.orderDate):'Not set'}</span></div>
+      <div class="date-item"><span class="date-label">Install date</span><span class="date-val auto">${installDate?fmt(installDate):'—'}</span></div>
+      <div class="date-item"><span class="date-label">Design start</span><span class="date-val auto">${designStart?fmt(designStart):'—'}</span></div>
+      <div class="date-item"><span class="date-label">Workshop dwg</span><span class="date-val auto">${workshopDrawing?fmt(workshopDrawing):'—'}</span></div>
+    </div>`;
+  div.addEventListener('click', () => showDetail(p.id));
+  return div;
+}
+
+function renderProjectCard(p) {
+  const existing = document.getElementById('card_' + p.id);
+  if (!existing) return;
+  const newCard = buildProjectCard(p);
+  existing.replaceWith(newCard);
+}
+
+/* ─────────────────────────────────────────────
+   DETAIL PANEL
+───────────────────────────────────────────── */
+function showDetail(id) {
+  selectedId = id;
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+
+  document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('card_' + id);
+  if (card) card.classList.add('selected');
+
+  document.getElementById('detailWrap').style.display = 'block';
+  document.getElementById('detailName').textContent = p.name || 'Unnamed project';
+
+  document.getElementById('d_name').value = p.name || '';
+  document.getElementById('d_orderDate').value = p.orderDate || '';
+  document.getElementById('d_glassOrder').value = p.glassOrder || '';
+  document.getElementById('d_leadWeeks').value = p.leadWeeks || defaultLead;
+
+  refreshDetailCalcs(p);
+  renderChecklist(p);
+  renderNotifyBanner(p);
+
+  const urlInput = document.getElementById('d_worksUrl');
+  urlInput.value = p.worksOrderUrl || '';
+  refreshWorksLink(p.worksOrderUrl);
+
+  document.getElementById('detailWrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function refreshDetailCalcs(p) {
+  const { installDate, designStart, workshopDrawing } = calcDates(p);
+  document.getElementById('d_designStart').textContent = fmt(designStart);
+  document.getElementById('d_workshopDrawing').textContent = fmt(workshopDrawing);
+  document.getElementById('d_installDate').textContent = fmt(installDate);
+  document.getElementById('d_installNote').textContent = `Order date + ${p.leadWeeks||defaultLead} weeks`;
+  document.getElementById('detailName').textContent = p.name || 'Unnamed project';
+
+  const done = CHECK_ITEMS.filter(k => p.checks[k]).length;
+  document.getElementById('d_progressFill').style.width = Math.round(done/CHECK_ITEMS.length*100)+'%';
+  document.getElementById('d_progressLbl').textContent = `${done} / ${CHECK_ITEMS.length}`;
+}
+
+function renderChecklist(p) {
+  const cl = document.getElementById('d_checklist');
+  cl.innerHTML = '';
+  CHECK_ITEMS.forEach(key => {
+    const checked = !!p.checks[key];
+    const assignedId = p.assignees[key] || '';
+    const assignedMember = team.find(m => m.id === assignedId);
+    const avatarTag = assignedMember
+      ? `<span class="avatar" style="background:${memberColor(assignedId).bg};color:${memberColor(assignedId).text};">${initials(assignedMember.name)}</span>`
+      : '';
+    const memberOptions = team.map(m => `<option value="${m.id}"${assignedId===m.id?' selected':''}>${m.name}</option>`).join('');
+    const item = document.createElement('div');
+    item.className = 'check-item' + (checked?' checked':'');
+    item.innerHTML = `
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleCheck(${p.id},'${key}')">
+      <span class="check-item-label">${key}</span>
+      ${avatarTag}
+      <select onchange="setAssignee(${p.id},'${key}',this.value)">
+        <option value="">Unassigned</option>${memberOptions}
+      </select>`;
+    cl.appendChild(item);
+  });
+}
+
+function renderNotifyBanner(p) {
+  const banner = document.getElementById('d_notifyBanner');
+  if (!p.checks['Design approved']) { banner.style.display='none'; return; }
+
+  const byMember = {};
+  TRIGGERED_BY_DESIGN.forEach(key => {
+    const assignedId = p.assignees[key];
+    if (!assignedId) return;
+    const member = team.find(m => m.id === assignedId);
+    if (!member || !member.email) return;
+    if (!byMember[assignedId]) byMember[assignedId] = {member, tasks:[]};
+    byMember[assignedId].tasks.push(key);
+  });
+
+  const grouped = Object.values(byMember);
+  if (!grouped.length) { banner.style.display='none'; return; }
+
+  const { installDate } = calcDates(p);
+  const linkHtml = grouped.map(({member, tasks}) => {
+    const taskList = tasks.map(t => `  - ${t}`).join('\n');
+    const subject = encodeURIComponent(`Project update: ${p.name||'Unnamed project'} — design approved`);
+    const body = encodeURIComponent(`Hi ${member.name},\n\nThe design has been approved for the following project:\n\nCustomer: ${p.name||'Unnamed project'}\nInstall date: ${fmt(installDate)}\n\nYou can now begin the following task${tasks.length>1?'s':''}:\n${taskList}\n\n** Please check the attached approved design image before starting. **\n\nThanks`);
+    const taskSummary = tasks.length===1 ? tasks[0] : `${tasks.length} tasks`;
+    const c = memberColor(member.id);
+    return `<a class="notify-link" href="mailto:${member.email}?subject=${subject}&body=${body}">
+      <span class="avatar" style="background:${c.bg};color:${c.text};">${initials(member.name)}</span>
+      Email ${member.name}
+      <span class="notify-tasks">${taskSummary}</span>
+    </a>`;
+  }).join('');
+
+  banner.innerHTML = `<div class="notify-banner">
+    <div class="notify-title">Design approved — notify assignees</div>
+    <div class="notify-sub">One email per person, listing all their tasks.</div>
+    <div class="attach-reminder">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8.5V4a4 4 0 018 0v7a2.5 2.5 0 01-5 0V5.5a1 1 0 012 0V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Remember to attach the approved design image before sending.
+    </div>
+    <div class="notify-links">${linkHtml}</div>
+  </div>`;
+  banner.style.display = 'block';
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.getElementById('detailWrap').style.display = 'none';
+  document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+}
+
+function updateWorksUrl() {
+  const p = projects.find(x => x.id === selectedId);
+  if (!p) return;
+  const val = document.getElementById('d_worksUrl').value.trim();
+  p.worksOrderUrl = val;
+  refreshWorksLink(val);
+  renderProjectCard(p);
+  saveToSheet();
+}
+
+function refreshWorksLink(url) {
+  const link = document.getElementById('d_worksLink');
+  if (url && url.startsWith('http')) { link.href = url; link.style.display = 'inline-flex'; }
+  else { link.style.display = 'none'; }
+}
+</script>
+</body>
+</html>
