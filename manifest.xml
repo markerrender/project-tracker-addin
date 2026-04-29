@@ -31,6 +31,7 @@
   <AppDomains>
     <!-- Add the domain where you host the add-in, e.g.: -->
     <!-- <AppDomain>https://your-company.github.io</AppDomain> -->
+    https://markerrender.github.io
   </AppDomains>
 
   <Hosts>
