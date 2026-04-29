@@ -13,7 +13,7 @@
   ════════════════════════════════════════════ -->
   <Id>be0e4cc4-0057-4f30-bd1f-605ca1d63b81</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Your Company Name</ThePeriodDoorCompany>
+  <ProviderName>The Period Door Company</ProviderName>
   <DefaultLocale>en-GB</DefaultLocale>
 
   <DisplayName DefaultValue="Project Tracker"/>
@@ -41,11 +41,11 @@
   <DefaultSettings>
     <!-- ═════════════════════════════════════════
          SOURCE LOCATION
-         Replace with the URL where taskpane.html
+         Replace with the URL where index.html
          is hosted, e.g.:
-         https://your-company.github.io/project-tracker-addin/taskpane.html
+         https://your-company.github.io/project-tracker-addin/index.html
     ══════════════════════════════════════════ -->
-    <SourceLocation DefaultValue="https://markerrender.github.io/project-tracker-addin/taskpane.html"/>
+    <SourceLocation DefaultValue="https://markerrender.github.io/project-tracker-addin/index.html"/>
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -104,8 +104,8 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://markerrender.github.io/project-tracker-addin"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://markerrender.github.io/project-tracker-addin/taskpane.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://markerrender.github.io/project-tracker-addin/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://markerrender.github.io/project-tracker-addin/index.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://markerrender.github.io/project-tracker-addin/index.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Project Tracker is ready"/>
